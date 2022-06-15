@@ -12,8 +12,24 @@ if(sourcePath==undefined)
     process.exit(0)
 }
 
+if(targetPath == undefined)
+{
+    targetPath = sourcePath;
+}
+
+let width=-1;
+let height=-1;
+let format = "";
+
+let sameBlock = 0;
+let diffBlock = 0;
+
+let oldTexture = null;
+
 fs.readdir(sourcePath, (err, files) => 
 {
+    let movie = [];
+
     files.forEach(file => 
     {
         if(path.extname(file) == ".dds")
@@ -21,25 +37,159 @@ fs.readdir(sourcePath, (err, files) =>
             console.log(file);
 
             var data = fs.readFileSync(path.join(sourcePath, file));
-            var buffer = ToArrayBuffer(data);
+            var buffer = Array2Buffer(data);
             var dds = parse(buffer);
-            console.log(dds.format)  // 'dxt1'
-            console.log(dds.shape)   // [ width, height ]
-            //console.log(dds.images)  // [ ... mipmap level data ... ]*/
+            console.log(dds.format + ", " + dds.shape[0] + "x" + dds.shape[1]);
+
+            if(dds.format != "dxt1" && dds.format != "dxt5")
+            {
+                console.log("Error: Unsupported format! - " + dds.format);
+                process.exit(0);
+            }
             
+
+            if(format=="")
+            {
+                format = dds.format;
+            }
+            else
+            {
+                if(format!=dds.format)
+                {
+                    console.log("Error: Different format!");
+                    process.exit(0)
+                }
+            }
+
+            if(width==-1)
+            {
+                width = dds.shape[0];
+                height  = dds.shape[1];
+            }
+            else
+            {
+                // size check
+                if(width != dds.shape[0] || height != dds.shape[1])
+                {
+                    console.log("Error: DDS size mismatch!");
+                    process.exit(0);
+                }
+            }
+
             var image = dds.images[0]
+            var texture = new Uint8Array(buffer, image.offset, image.length)
+            //console.log(image)  // [ ... mipmap level data ... ]*/
+
+            let blockBytes = 8;
+            if(dds.format == "dxt5")
+                blockBytes=16;
+
+            for(i=0;i<texture.length;i+=blockBytes)
+            {
+                let diff = false;
+
+                if(oldTexture==null)
+                {
+                    diff = true;
+                }
+                else
+                {
+                    // same or different?
+                    for(j=0;j<blockBytes;j++)
+                    {
+                        if(oldTexture[i+j]!=texture[i+j])
+                        {
+                            diff = true;
+                            break;
+                        }
+                    }
+                }
+
+                if(diff)
+                {
+                    diffBlock++;
+
+                    movie.push(0xff); 
+                    // push
+                    for(j=0;j<blockBytes;j++)
+                    {
+                        movie.push(texture[i+j]);
+                    }
+                }
+                else
+                {
+                    sameBlock ++;
+                    movie.push(0x00);
+                }
+            }
+
+            oldTexture = texture;
         }
     });
+
+    console.log("movie.length: " + movie.length);
+    console.log("diffBlock = " + diffBlock + "  sameBlock = " + sameBlock);
+
+    let movie8Array = new Uint8Array(movie.length + 16/*header*/);
+
+    // add header
+    movie8Array[0] = 68;  // D
+    movie8Array[1] = 50;  // 2
+    movie8Array[2] = 77;  // M
+    movie8Array[3] = 32;  // Space
+
+    widthByte = Int2Bytes(width);
+
+    // little endian
+    movie8Array[4] = widthByte[3];
+    movie8Array[5] = widthByte[2];
+    movie8Array[6] = widthByte[1];
+    movie8Array[7] = widthByte[0];
+
+    heightByte = Int2Bytes(height);
+
+    movie8Array[8] = heightByte[3];
+    movie8Array[9] = heightByte[2];
+    movie8Array[10] = heightByte[1];
+    movie8Array[11] = heightByte[0];
+
+    if(format=='dxt1')
+        movie8Array[12]=1;
+    if(format=='dxt5')
+        movie8Array[12]=5;
+
+    // reserved
+    movie8Array[13]=0;
+    movie8Array[14]=0;
+    movie8Array[15]=0;
+
+    for(i=0;i<movie.length;i++)
+    {
+        movie8Array[16+i] = movie[i];
+    }
+
+    fs.writeFileSync(path.join(targetPath, "out.d2m"), movie8Array);
 });
 
 
+function Int2Bytes (num) {
+    arr = new Uint8Array([
+         (num & 0xff000000) >> 24,
+         (num & 0x00ff0000) >> 16,
+         (num & 0x0000ff00) >> 8,
+         (num & 0x000000ff)
+    ]);
 
+    return arr;
+}
 
-function ToArrayBuffer(buf) {
+function Array2Buffer(buf) 
+{
     const ab = new ArrayBuffer(buf.length);
-    const view = new Uint8Array(ab);
-    for (let i = 0; i < buf.length; ++i) {
-        view[i] = buf[i];
+    const data = new Uint8Array(ab);
+    for (let i = 0; i < buf.length; ++i)
+     {
+        data[i] = buf[i];
     }
     return ab;
 }
