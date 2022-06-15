@@ -141,6 +141,7 @@ fs.readdir(sourcePath, (err, files) =>
 
     // version
     movie8Array[4] = 1;  
+
     movie8Array[5] = fps;
     
     if(format=='dxt1')
@@ -148,6 +149,7 @@ fs.readdir(sourcePath, (err, files) =>
     if(format=='dxt5')
         movie8Array[6]=5;
 
+    // reserved
     movie8Array[7] = 0;
 
 
