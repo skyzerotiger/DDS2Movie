@@ -20,6 +20,7 @@ if(targetPath == undefined)
 let width=-1;
 let height=-1;
 let format = "";
+let fps = 30;
 
 let sameBlock = 0;
 let diffBlock = 0;
@@ -130,7 +131,7 @@ fs.readdir(sourcePath, (err, files) =>
     console.log("movie.length: " + movie.length);
     console.log("diffBlock = " + diffBlock + "  sameBlock = " + sameBlock);
 
-    let movie8Array = new Uint8Array(movie.length + 16/*header*/);
+    let movie8Array = new Uint8Array(movie.length + 20/*header*/);
 
     // add header
     movie8Array[0] = 68;  // D
@@ -138,34 +139,42 @@ fs.readdir(sourcePath, (err, files) =>
     movie8Array[2] = 77;  // M
     movie8Array[3] = 32;  // Space
 
-    widthByte = Int2Bytes(width);
+    // version
+    movie8Array[4] = 1;  
+    movie8Array[5] = fps;
+    
+    if(format=='dxt1')
+        movie8Array[6]=1;
+    if(format=='dxt5')
+        movie8Array[6]=5;
+
+    movie8Array[7] = 0;
+
+
+    let widthByte = Int2Bytes(width);
 
     // little endian
-    movie8Array[4] = widthByte[3];
-    movie8Array[5] = widthByte[2];
-    movie8Array[6] = widthByte[1];
-    movie8Array[7] = widthByte[0];
+    movie8Array[8] = widthByte[3];
+    movie8Array[9] = widthByte[2];
+    movie8Array[10] = widthByte[1];
+    movie8Array[11] = widthByte[0];
 
-    heightByte = Int2Bytes(height);
+    let heightByte = Int2Bytes(height);
 
-    movie8Array[8] = heightByte[3];
-    movie8Array[9] = heightByte[2];
-    movie8Array[10] = heightByte[1];
-    movie8Array[11] = heightByte[0];
-
-    if(format=='dxt1')
-        movie8Array[12]=1;
-    if(format=='dxt5')
-        movie8Array[12]=5;
+    movie8Array[12] = heightByte[3];
+    movie8Array[13] = heightByte[2];
+    movie8Array[14] = heightByte[1];
+    movie8Array[15] = heightByte[0];
 
     // reserved
-    movie8Array[13]=0;
-    movie8Array[14]=0;
-    movie8Array[15]=0;
+    movie8Array[16] = 0;
+    movie8Array[17] = 0;
+    movie8Array[18] = 0;
+    movie8Array[19] = 0;
 
     for(i=0;i<movie.length;i++)
     {
-        movie8Array[16+i] = movie[i];
+        movie8Array[20+i] = movie[i];
     }
 
     fs.writeFileSync(path.join(targetPath, "out.d2m"), movie8Array);
