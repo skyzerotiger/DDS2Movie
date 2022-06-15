@@ -1,0 +1,22 @@
+{
+  "name": "dds2movie",
+  "version": "1.0.0",
+  "description": "DDS files to Movie file. Fast, Light, Realtime",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/skyzerotiger/DDS2Movie.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/skyzerotiger/DDS2Movie/issues"
+  },
+  "homepage": "https://github.com/skyzerotiger/DDS2Movie#readme",
+  "dependencies": {
+    "parse-dds": "^1.2.1"
+  }
+}
