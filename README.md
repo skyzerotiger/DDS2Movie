@@ -16,3 +16,7 @@ option:
      -fps : Frame per second (Default 30)   
         
 ex) node index.js c:\user\desktop\1 -fps 30   
+
+# Player
+
+[DDS2Movie-Player](https://github.com/skyzerotiger/DDS2Movie-Player)
