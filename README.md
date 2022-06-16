@@ -11,8 +11,8 @@ DDS2Movie does not support audio and is not intended to replace traditional vide
 
 # 사용법(Usage)
 
-Usage: node index.js fps sourcePath targetPath
-option: 
-     -fps : Frame per second (Default 30)
-     
-ex) node index.js c:\user\desktop\1 -fps 30
+Usage: node index.js fps sourcePath targetPath   
+option:    
+     -fps : Frame per second (Default 30)   
+        
+ex) node index.js c:\user\desktop\1 -fps 30   
