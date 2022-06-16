@@ -3,12 +3,52 @@ var path = require("path");
 var parse = require('parse-dds')
 
 const args = process.argv.slice(2);
-let sourcePath = args[0];
-let targetPath = args[1];
+
+let sourcePath, targetPath;
+let fps = 30;
+
+
+let pathIndex = 0;
+for(i=0;i<args.length;i++)
+{
+    // option check
+    if(args[i]=='-h' || args[i]=='--help')
+    {
+        ShowHelp();
+        process.exit(0)
+    }
+    else if(args[i]=='-fps')
+    {
+        i++;
+        try
+        {
+            fps = parseInt(args[i]);            
+        }
+        catch
+        {
+            console.log("invalid fps option - " + args[i]);
+            ShowHelp();
+            process.exit(1);
+        }
+    }
+    else
+    {
+        if(pathIndex==0)
+        {
+            sourcePath = args[i];
+            pathIndex ++;
+        }
+        if(pathIndex==1)
+        {
+            targetPath = args[i];
+            pathIndex ++;
+        }
+    }
+}
 
 if(sourcePath==undefined)
 {
-    console.log("Usage: node index.js sourcePath targetPath");
+    ShowHelp();
     process.exit(0)
 }
 
@@ -20,10 +60,13 @@ if(targetPath == undefined)
 let width=-1;
 let height=-1;
 let format = "";
-let fps = 30;
+
 
 let sameBlock = 0;
 let diffBlock = 0;
+let upperSameblock = 0;
+let lowerSameblock = 0;
+let frameCount = 0;
 
 let oldTexture = null;
 
@@ -35,19 +78,21 @@ fs.readdir(sourcePath, (err, files) =>
     {
         if(path.extname(file) == ".dds")
         {
-            console.log(file);
-
             var data = fs.readFileSync(path.join(sourcePath, file));
             var buffer = Array2Buffer(data);
             var dds = parse(buffer);
-            console.log(dds.format + ", " + dds.shape[0] + "x" + dds.shape[1]);
-
+            
             if(dds.format != "dxt1" && dds.format != "dxt5")
             {
                 console.log("Error: Unsupported format! - " + dds.format);
                 process.exit(0);
             }
             
+            if(dds.shape[0]  % 4 !=0 || dds.shape[1] % 4 !=0)
+            {
+                console.log("Error: Width, height must be multiply of 4! - " + dds.format);
+                process.exit(0);
+            }
 
             if(format=="")
             {
@@ -79,7 +124,7 @@ fs.readdir(sourcePath, (err, files) =>
 
             var image = dds.images[0]
             var texture = new Uint8Array(buffer, image.offset, image.length)
-            //console.log(image)  // [ ... mipmap level data ... ]*/
+            console.log(file +", " + dds.format + ", " + dds.shape[0] + "x" + dds.shape[1] );
 
             let blockBytes = 8;
             if(dds.format == "dxt5")
@@ -87,49 +132,114 @@ fs.readdir(sourcePath, (err, files) =>
 
             for(i=0;i<texture.length;i+=blockBytes)
             {
-                let diff = false;
+                // 0 - all same, 0x01 - upper same, 0x02 - lower same, 0xff - all diff
+                let diffType = -1;
 
                 if(oldTexture==null)
                 {
-                    diff = true;
+                    diffType = 0xff;
                 }
                 else
                 {
-                    // same or different?
+                    diffType = 0xff;
+
+                    let allSame = true;
                     for(j=0;j<blockBytes;j++)
                     {
                         if(oldTexture[i+j]!=texture[i+j])
                         {
-                            diff = true;
+                            allSame = false;
                             break;
+                        }
+                    }
+
+                    if(allSame)                    
+                    {
+                        diffType = 0x00;
+                    }
+                    else
+                    {
+                        // upper half
+                        let upperSame = true;
+                        for(j=0;j<blockBytes/2;j++)
+                        {
+                            if(oldTexture[i+j]!=texture[i+j])
+                            {       
+                                upperSame= false;                     
+                                break;
+                            }
+                        }
+
+                        if(upperSame)
+                        {
+                            diffType = 0x01;
+                        }
+                        else
+                        {
+                            // lower half
+                            let lowerSame = false;
+                            for(j=0;j<blockBytes/2;j++)
+                            {
+                                if(oldTexture[i+j+blockBytes/2]!=texture[i+j+blockBytes/2])
+                                {       
+                                    lowerHalfDiff= true;                     
+                                    break;
+                                }
+                            }
+
+                            if(upperSame)
+                            {
+                                diffType = 0x02;
+                            }
                         }
                     }
                 }
 
-                if(diff)
+                switch(diffType)
                 {
-                    diffBlock++;
+                    case 0x00:
+                        sameBlock ++;
+                        movie.push(0x00);
+                        break;
 
-                    movie.push(0xff); 
-                    // push
-                    for(j=0;j<blockBytes;j++)
-                    {
-                        movie.push(texture[i+j]);
-                    }
-                }
-                else
-                {
-                    sameBlock ++;
-                    movie.push(0x00);
+                    case 0x01:
+                        upperSameblock++;
+                        movie.push(0x01); 
+                        // push lower
+                        for(j=blockBytes/2;j<blockBytes;j++)
+                        {
+                            movie.push(texture[i+j]);
+                        }                        
+                        break;
+
+                    case 0x02:
+                        lowerSameblock++;
+                        movie.push(0x02);
+                        // push upper
+                        for(j=0;j<blockBytes/2;j++)
+                        {
+                            movie.push(texture[i+j]);
+                        }
+                        break;
+
+                    case 0xff:
+                        diffBlock++;
+                        movie.push(0xff); 
+                        // push
+                        for(j=0;j<blockBytes;j++)
+                        {
+                            movie.push(texture[i+j]);
+                        }
                 }
             }
 
+            frameCount++;
             oldTexture = texture;
         }
     });
 
-    console.log("movie.length: " + movie.length);
-    console.log("diffBlock = " + diffBlock + "  sameBlock = " + sameBlock);
+    console.log("movie.length: " + movie.length + "   diffBlock = " + diffBlock + "  sameBlock = " + sameBlock + "  upperSameblock = " + upperSameblock + "  lowerSameblock = " + lowerSameblock);
+    console.log("frameCount = " + frameCount + "   fps = " + fps);
 
     let movie8Array = new Uint8Array(movie.length + 20/*header*/);
 
@@ -168,11 +278,12 @@ fs.readdir(sourcePath, (err, files) =>
     movie8Array[14] = heightByte[1];
     movie8Array[15] = heightByte[0];
 
-    // reserved
-    movie8Array[16] = 0;
-    movie8Array[17] = 0;
-    movie8Array[18] = 0;
-    movie8Array[19] = 0;
+    let frameCountByte = Int2Bytes(frameCount);
+
+    movie8Array[16] = frameCountByte[3];
+    movie8Array[17] = frameCountByte[2];
+    movie8Array[18] = frameCountByte[1];
+    movie8Array[19] = frameCountByte[0];
 
     for(i=0;i<movie.length;i++)
     {
@@ -180,6 +291,7 @@ fs.readdir(sourcePath, (err, files) =>
     }
 
     fs.writeFileSync(path.join(targetPath, "out.d2m"), movie8Array);
+    console.log("done! - " + path.join(targetPath, "out.d2m"));
 });
 
 
@@ -203,4 +315,11 @@ function Array2Buffer(buf)
         data[i] = buf[i];
     }
     return ab;
+}
+
+function ShowHelp()
+{
+    console.log("Usage: node index.js fps sourcePath targetPath");
+    console.log("option: ");
+    console.log("    -fps : Frame per second (Default 30)");
 }
