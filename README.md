@@ -1,4 +1,4 @@
-# DDS2Movie
+# DDS2Movie-Maker
 DDS files to Movie file. Fast, Light, Realtime
     
 DDS2Movie는 여러 장의 DDS 파일을 묶어 동영상으로 만들어 주는 툴입니다.      
