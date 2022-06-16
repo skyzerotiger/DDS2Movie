@@ -8,3 +8,11 @@ DDS2Movie는 오디오를 지원하지 않으며 기존의 동영상을 대체�
 DDS2Movie is a tool that combines multiple DDS files into a video.   
 It was mainly made to reduce memory and increase loading speed of sprite sheet animations in games.   
 DDS2Movie does not support audio and is not intended to replace traditional video.   
+
+# 사용법(Usage)
+
+Usage: node index.js fps sourcePath targetPath
+option: 
+     -fps : Frame per second (Default 30)
+     
+ex) node index.js c:\user\desktop\1 -fps 30
