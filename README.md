@@ -10,7 +10,6 @@ It was mainly made to reduce memory and increase loading speed of sprite sheet a
 DDS2Movie does not support audio and is not intended to replace traditional video.   
 
 # 사용법(Usage)
-
 Usage: node index.js fps sourcePath targetPath   
 option:    
      -fps : Frame per second (Default 30)   
@@ -18,5 +17,7 @@ option:
 ex) node index.js c:\user\desktop\1 -fps 30   
 
 # Player
-
 [DDS2Movie-Player](https://github.com/skyzerotiger/DDS2Movie-Player)
+
+# support me
+- [buy me a coffee](https://www.buymeacoffee.com/skyzero)
