@@ -1,5 +1,5 @@
 # DDS2Movie-Maker
-DDS Sheet animation optimizer. Free, Light, Realtime
+DDS sheet animation optimizer. Free, Light, Realtime
     
 DDS2Movie는 주로 게임안에서 스프라이트 시트 애니메이션의 메모리 감소, 로딩 속도 증가등을 위해 만들어 졌습니다.   
 DDS2Movie는 오디오를 지원하지 않으며 기존의 동영상을 대체하기 위해 만들어진 포맷은 아닙니다.   
