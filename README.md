@@ -20,4 +20,4 @@ ex) node index.js c:\user\desktop\1 -fps 30
 [DDS2Movie-Player](https://github.com/skyzerotiger/DDS2Movie-Player)
 
 # support me
-- [buy me a coffee](https://www.buymeacoffee.com/skyzero)
+[buy me a coffee](https://www.buymeacoffee.com/skyzero)
