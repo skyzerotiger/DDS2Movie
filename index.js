@@ -165,7 +165,7 @@ fs.readdir(sourcePath, (err, files) =>
                         {
                             if(oldTexture[i+j]!=texture[i+j])
                             {       
-                                upperSame= false;                     
+                                upperSame = false;                     
                                 break;
                             }
                         }
@@ -177,12 +177,12 @@ fs.readdir(sourcePath, (err, files) =>
                         else
                         {
                             // lower half
-                            let lowerSame = false;
+                            let lowerSame = true;
                             for(j=0;j<blockBytes/2;j++)
                             {
                                 if(oldTexture[i+j+blockBytes/2]!=texture[i+j+blockBytes/2])
                                 {       
-                                    lowerHalfDiff= true;                     
+                                    lowerSame = false;                     
                                     break;
                                 }
                             }
